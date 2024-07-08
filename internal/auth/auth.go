@@ -1,7 +1,9 @@
 package auth
 
 import (
+	"context"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/bupd/goth"
@@ -9,6 +11,8 @@ import (
 	"github.com/bupd/goth/providers/google"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"golang.org/x/oauth2"
+	"google.golang.org/api/drive/v2"
 )
 
 const (
@@ -16,6 +20,31 @@ const (
 	MaxAge = 86400 * 30
 	IsProd = false
 )
+
+func GetClient() *http.Client {
+	config := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Endpoint:     google.Endpoint,
+		RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
+		Scopes:       []string{drive.DriveFileScope}, // Full access to Google Drive
+	}
+
+	// Create a token with the refresh token
+	token := &oauth2.Token{RefreshToken: refreshToken}
+
+	// Use the token source to refresh the token
+	tokenSource := config.TokenSource(context.Background(), token)
+
+	// Get the new access token
+	newToken, err := tokenSource.Token()
+	if err != nil {
+		log.Fatalf("Unable to get access token: %v", err)
+	}
+
+	// Return an HTTP client with the refreshed token
+	return config.Client(context.Background(), newToken)
+}
 
 func NewAuth() {
 	err := godotenv.Load()
