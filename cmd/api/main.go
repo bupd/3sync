@@ -1,9 +1,8 @@
 package main
 
 import (
-	"3sync/internal/auth"
-	"3sync/internal/server"
-	"fmt"
+	"3sync/internal/gdrive"
+	"3sync/utils"
 )
 
 const (
@@ -14,12 +13,15 @@ const (
 
 func main() {
 	// Instantiate gothic
-	auth.NewAuth()
+	// auth.NewAuth()
 
-	server := server.NewServer()
+	utils.LoadEnv()
+	gdrive.UploadFile()
 
-	err := server.ListenAndServe()
-	if err != nil {
-		panic(fmt.Sprintf("cannot start server: %s", err))
-	}
+	// server := server.NewServer()
+	//
+	// err := server.ListenAndServe()
+	// if err != nil {
+	// 	panic(fmt.Sprintf("cannot start server: %s", err))
+	// }
 }
