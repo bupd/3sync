@@ -27,3 +27,6 @@ tmp/
 
 # Project build
 main
+
+# refresh token
+token.json
