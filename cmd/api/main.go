@@ -6,9 +6,15 @@ import (
 	"fmt"
 )
 
+const (
+	clientID     = "YOUR_CLIENT_ID"
+	clientSecret = "YOUR_CLIENT_SECRET"
+	refreshToken = "YOUR_REFRESH_TOKEN"
+)
+
 func main() {
-  // Instantiate gothic
-  auth.NewAuth()
+	// Instantiate gothic
+	auth.NewAuth()
 
 	server := server.NewServer()
 
