@@ -23,15 +23,15 @@ const (
 
 func GetClient() *http.Client {
 	config := &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		Endpoint:     google.Endpoint,
 		RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
 		Scopes:       []string{drive.DriveFileScope}, // Full access to Google Drive
 	}
 
 	// Create a token with the refresh token
-	token := &oauth2.Token{RefreshToken: refreshToken}
+	token := &oauth2.Token{RefreshToken: os.Getenv("REFRESH_TOKEN")}
 
 	// Use the token source to refresh the token
 	tokenSource := config.TokenSource(context.Background(), token)
