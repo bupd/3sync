@@ -1,27 +1,41 @@
 package main
 
 import (
+	"3sync/internal/auth"
 	"3sync/internal/gdrive"
 	"3sync/utils"
-)
-
-const (
-	clientID     = "YOUR_CLIENT_ID"
-	clientSecret = "YOUR_CLIENT_SECRET"
-	refreshToken = "YOUR_REFRESH_TOKEN"
+	"fmt"
+	"os"
 )
 
 func main() {
-	// Instantiate gothic
-	// auth.NewAuth()
-
 	utils.LoadEnv()
-	gdrive.UploadFile()
 
-	// server := server.NewServer()
-	//
-	// err := server.ListenAndServe()
-	// if err != nil {
-	// 	panic(fmt.Sprintf("cannot start server: %s", err))
-	// }
+	// check if token file exists
+	if !fileExists() {
+		doAuth()
+	}
+
+  // List File
+  gdrive.List()
+	// UploadFile
+	// gdrive.UploadFile()
+}
+
+// gets the refreshToken and creates the oauth token
+func doAuth() {
+	config := auth.GetOAuthConfig()
+	refreshToken := auth.GetRefreshToken(config)
+	fmt.Printf("Your refresh token: %s\n", refreshToken)
+}
+
+// Check if token file exists or not
+func fileExists() bool {
+	if _, err := os.Stat("token.json"); err == nil {
+		fmt.Printf("File exists\n")
+		return true
+	} else {
+		fmt.Printf("Token File does not exist\n")
+		return false
+	}
 }
