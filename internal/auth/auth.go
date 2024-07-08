@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +13,6 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
-	"google.golang.org/api/drive/v2"
 )
 
 const (
@@ -21,29 +21,53 @@ const (
 	IsProd = false
 )
 
-func GetClient() *http.Client {
-	config := &oauth2.Config{
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		Endpoint:     google.Endpoint,
-		RedirectURL:  "urn:ietf:wg:oauth:2.0:oob",
-		Scopes:       []string{drive.DriveFileScope}, // Full access to Google Drive
+// Function to read token from file
+func tokenFromFile(file string) (*oauth2.Token, error) {
+	f, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	tok := &oauth2.Token{}
+	err = json.NewDecoder(f).Decode(tok)
+	return tok, err
+}
+
+// Function to save token to file
+func saveToken(file string, token *oauth2.Token) error {
+	f, err := os.OpenFile(file, os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	return json.NewEncoder(f).Encode(token)
+}
+
+// Function to get authenticated HTTP client
+func GetClient(config *oauth2.Config) *http.Client {
+	// Read token from file
+	tokenFile := "token.json"
+	token, err := tokenFromFile(tokenFile)
+	if err != nil {
+		log.Fatalf("Unable to read token file: %v", err)
 	}
 
-	// Create a token with the refresh token
-	token := &oauth2.Token{RefreshToken: os.Getenv("REFRESH_TOKEN")}
-
-	// Use the token source to refresh the token
+	// Use token source to ensure it's valid
 	tokenSource := config.TokenSource(context.Background(), token)
-
-	// Get the new access token
 	newToken, err := tokenSource.Token()
 	if err != nil {
-		log.Fatalf("Unable to get access token: %v", err)
+		log.Fatalf("Unable to refresh access token: %v", err)
 	}
 
-	// Return an HTTP client with the refreshed token
-	return config.Client(context.Background(), newToken)
+	// Save new token if it has changed
+	if newToken.AccessToken != token.AccessToken {
+		if err := saveToken(tokenFile, newToken); err != nil {
+			log.Fatalf("Unable to save updated token: %v", err)
+		}
+	}
+
+	// Return an HTTP client with the token source
+	return oauth2.NewClient(context.Background(), tokenSource)
 }
 
 func NewAuth() {
