@@ -65,6 +65,61 @@ func main() {
 		// In case when key is not present in map variable exists will be false.
 		fmt.Printf("key exists in map: %t, value: %v \n", exists, value)
 	}
+
+	// send all keys in glist map to download
+	// // Write to file
+	// err := writeLines(gNamelist, "prev.txt")
+	// if err != nil {
+	// 	log.Fatalf("Error in writing drive list to the file: %v", err)
+	// }
+
+	// Read from file
+	gOldList, err := readLines("prev.txt")
+	if err != nil {
+		log.Fatalf("Error in reading drive list from the file: %v", err)
+	}
+
+	// Write to file
+	err = writeLines(gNamelist, "prev.txt")
+	if err != nil {
+		log.Fatalf("Error in writing drive list to the file: %v", err)
+	}
+
+	for i := range gOldList {
+		_, exists := localMap[gOldList[i]]
+		if exists {
+			delete(localMap, gOldList[i])
+		} else {
+			id := gdrive.GetID(gOldList[i])
+			gdrive.Delete(id)
+		}
+	}
+	// UploadFile leftover local map
+	for _, item := range localMap {
+		gdrive.UploadFile(item)
+	}
+
+	for i := range localList {
+		_, exists := gListMap[localList[i]]
+		if exists {
+			delete(gListMap, localList[i])
+		} else {
+			local.Delete(localList[i])
+		}
+	}
+
+	// UploadFile leftover local map
+	for _, item := range gListMap {
+		gdrive.Download(gListMap[item])
+	}
+
+	// send all glist to previous.txt
+
+	// delete all items in the list
+	//
+	// for _, item := range glist {
+	// 	gdrive.Delete(item)
+	// }
 }
 
 // gets the refreshToken and creates the oauth token
@@ -74,13 +129,47 @@ func doAuth() {
 	fmt.Printf("Your refresh token: %s\n", refreshToken)
 }
 
-// Check if token file exists or not
-func fileExists() bool {
-	if _, err := os.Stat("token.json"); err == nil {
-		fmt.Printf("File exists\n")
-		return true
-	} else {
-		fmt.Printf("Token File does not exist\n")
-		return false
+// readLines reads a file into a slice of strings
+func readLines(filename string) ([]string, error) {
+	var lines []string
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("unable to open file: %w", err)
 	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, fmt.Errorf("error reading file: %w", err)
+	}
+
+	return lines, nil
+}
+
+// writeLines writes a slice of strings to a file
+func writeLines(lines []string, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("unable to create file: %w", err)
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	for _, line := range lines {
+		_, err := writer.WriteString(line + "\n")
+		if err != nil {
+			return fmt.Errorf("error writing to file: %w", err)
+		}
+	}
+
+	if err := writer.Flush(); err != nil {
+		return fmt.Errorf("error flushing writer: %w", err)
+	}
+
+	return nil
 }
