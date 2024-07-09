@@ -15,8 +15,8 @@ import (
 	"google.golang.org/api/option"
 )
 
-// Upload a file to the gdrive
-func List() {
+// Lists the id and Name of file in gdrive
+func List() ([]string, []string) {
 	// TO-DO: remove the config and get from the main
 	config := &oauth2.Config{
 		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
@@ -34,6 +34,7 @@ func List() {
 
 	// List the file
 	// TO-DO: if problems occur change the insert to io.reader as expected.
+	// https://developers.google.com/drive/api/guides/search-files -- link to doc
 	fileList, err := driveService.Files.List().Q("trashed=false").Do()
 	if err != nil {
 		if googleapi.IsNotModified(err) {
@@ -50,11 +51,16 @@ func List() {
 	// Print the pretty-printed JSON
 	fmt.Println("\nFile list JSON:\n", string(listJson))
 
+	var IDList []string
+	var NameList []string
 	// Print the individual file names
 	fmt.Println("\nFile names:")
 	for _, file := range fileList.Items {
-		fmt.Println(file.Title)
+		fmt.Println(file.Title, file.Id)
+		IDList = append(IDList, file.Id)
+		NameList = append(NameList, file.Title)
 	}
 
 	fmt.Printf("File list fetched successfully: %v\n", fileList)
+	return IDList, NameList
 }
