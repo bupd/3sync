@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -21,5 +22,26 @@ func LoadEnv() {
 
 	if googleClientID == "" || googleClientSecret == "" || redirectURI == "" {
 		log.Fatalf("Google OAuth environment variables not set")
+	}
+}
+
+func GetHomeDir() string {
+	// get home Directory
+	home, err := os.UserHomeDir()
+	if err != nil {
+		log.Fatalf("Failed to get home directory: %v", err)
+	}
+
+	fmt.Println("Home Directory:", home)
+	return home
+}
+
+func Exists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		fmt.Printf("%s File exists\n", path)
+		return true
+	} else {
+		fmt.Printf("%s File does not exist\n", path)
+		return false
 	}
 }
